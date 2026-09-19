@@ -57,6 +57,9 @@ class Application extends SymfonyApplication {
         $this->add(new \Ocm\Commands\InstallCommand());
         $this->add(new \Ocm\Commands\DevCommand());
         $this->add(new \Ocm\Commands\BuildCommand());
+        $this->add(new \Ocm\Commands\PublishCommand());
+        $this->add(new \Ocm\Commands\UpdateCommand());
+        $this->add(new \Ocm\Commands\UpdateCheckCommand());
         $this->add(new \Ocm\Commands\RemoveCommand());
         $this->add(new \Ocm\Commands\ReturnCommand());
         $this->add(new \Ocm\Commands\OcmodRefreshCommand());
