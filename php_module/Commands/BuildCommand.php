@@ -103,6 +103,14 @@ class BuildCommand extends Command {
                 $io->text("  + <info>install.json</info>");
                 $packedFilesCount++;
             }
+
+            // Добавляем opencart-module.json, если есть
+            $moduleJson = $currentDir . '/opencart-module.json';
+            if (file_exists($moduleJson)) {
+                $zip->addFile($moduleJson, 'opencart-module.json');
+                $io->text("  + <info>opencart-module.json</info> (метаданные модуля)");
+                $packedFilesCount++;
+            }
         } else {
             // Вариант 2: Легаси сборка по шаблонам .build-module
             $io->text("Сборка по шаблонам из <info>.build-module</info>...");
