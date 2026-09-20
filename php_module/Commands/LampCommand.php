@@ -31,15 +31,18 @@ class LampCommand extends Command {
             $scriptService = new \Ocm\Services\ScriptService();
         }
 
+        $target = $input->getArgument('target') ?: '.';
+
         $lampScript = $scriptService->resolveScriptPath('lamp');
-        if (!$lampScript) {
-            $io->error('Скрипт lamp.sh не найден в директории scripts/.');
-            return self::FAILURE;
+        if ($lampScript) {
+            $io->text("Запуск скрипта <info>{$lampScript}</info> для каталога: <comment>{$target}</comment>...");
+            return $scriptService->execute($lampScript, [$target]);
         }
 
-        $target = $input->getArgument('target');
-        $io->text("Запуск скрипта <info>{$lampScript}</info> для каталога: <comment>{$target}</comment>...");
-
-        return $scriptService->execute($lampScript, [$target]);
+        $io->text("Запуск установки GB-LAMP через curl для каталога: <comment>{$target}</comment>...");
+        $escapedTarget = escapeshellarg($target);
+        $cmd = "curl -sSL https://raw.githubusercontent.com/GregoryBiter/gb-lamp/main/lamp.sh | bash -s -- {$escapedTarget}";
+        passthru($cmd, $exitCode);
+        return $exitCode;
     }
 }
