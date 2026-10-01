@@ -610,7 +610,7 @@ SCRIPT;
         }
 
         if (array_key_exists('files', $metadata)) {
-            $errors[] = "Поле 'files' запрещено в opencart-module.json (используйте .ocm_files.json)";
+            $errors[] = "Поле 'files' запрещено в opencart-module.json (используйте .ocm/files.json)";
         }
 
         return empty($errors);

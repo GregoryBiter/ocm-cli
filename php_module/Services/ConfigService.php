@@ -16,14 +16,7 @@ class ConfigService {
         $this->jsonFile = $this->currentDir . '/opencart-module.json';
         $this->ocmDir = $this->currentDir . '/.ocm';
         
-        // Приоритет: .ocm/files.json, затем legacy .ocm_files.json
-        if (file_exists($this->ocmDir . '/files.json')) {
-            $this->filesJson = $this->ocmDir . '/files.json';
-        } elseif (file_exists($this->currentDir . '/.ocm_files.json')) {
-            $this->filesJson = $this->currentDir . '/.ocm_files.json';
-        } else {
-            $this->filesJson = $this->ocmDir . '/files.json';
-        }
+        $this->filesJson = $this->ocmDir . '/files.json';
     }
 
     public function ensureOcmDir() {
@@ -45,31 +38,40 @@ class ConfigService {
         if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
         }
-        file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        return file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 
     public function loadFilesList() {
-        // Проверяем сначала новый путь .ocm/files.json
-        if (file_exists($this->ocmDir . '/files.json')) {
-            $data = $this->loadJson($this->ocmDir . '/files.json');
-            if (isset($data['files'])) return $data['files'];
-        }
-
-        // Проверяем legacy .ocm_files.json
-        $legacyFile = $this->currentDir . '/.ocm_files.json';
-        if (file_exists($legacyFile)) {
-            $data = $this->loadJson($legacyFile);
-            return isset($data['files']) ? $data['files'] : [];
-        }
-
-        return [];
+        $this->migrateLegacyFilesList();
+        $data = $this->loadJson($this->filesJson);
+        return isset($data['files']) ? $data['files'] : [];
     }
 
     public function saveFilesList($files) {
         $this->ensureOcmDir();
-        $this->saveJson($this->ocmDir . '/files.json', ['files' => $files]);
-        // Также сохраняем legacy .ocm_files.json для обратной совместимости
-        $this->saveJson($this->currentDir . '/.ocm_files.json', ['files' => $files]);
+        if ($this->saveJson($this->filesJson, ['files' => $files]) === false) {
+            throw new \RuntimeException('Не удалось сохранить .ocm/files.json');
+        }
+        $this->migrateLegacyFilesList();
+    }
+
+    /**
+     * Перенос старого реестра: актуальный .ocm/files.json имеет приоритет.
+     */
+    protected function migrateLegacyFilesList() {
+        $legacyFile = $this->currentDir . '/.ocm_files.json';
+        if (!file_exists($legacyFile)) return false;
+
+        if (!file_exists($this->filesJson)) {
+            $this->ensureOcmDir();
+            if (!rename($legacyFile, $this->filesJson)) {
+                throw new \RuntimeException('Не удалось перенести .ocm_files.json в .ocm/files.json');
+            }
+        } elseif (!unlink($legacyFile)) {
+            throw new \RuntimeException('Не удалось удалить устаревший .ocm_files.json');
+        }
+
+        return true;
     }
 
     public function loadModuleMetadata() {
@@ -240,7 +242,7 @@ class ConfigService {
         }
 
         if (array_key_exists('files', $metadata)) {
-            $errors[] = "Поле 'files' запрещено в opencart-module.json (используйте .ocm_files.json)";
+            $errors[] = "Поле 'files' запрещено в opencart-module.json (используйте .ocm/files.json)";
         }
 
         return empty($errors);
@@ -268,27 +270,19 @@ class ConfigService {
      * Миграция данных из старого формата в новый.
      */
     public function migrateOldFormat() {
-        $migrated = false;
+        $migrated = $this->migrateLegacyFilesList();
 
         // Миграция files из opencart-module.json
         if (file_exists($this->jsonFile)) {
             $data = $this->loadJson($this->jsonFile);
             if ($data && isset($data['files'])) {
-                $files = $data['files'];
-                $this->saveFilesList($files);
+                if (!file_exists($this->filesJson)) {
+                    $this->saveFilesList($data['files']);
+                }
                 unset($data['files']);
                 $this->saveModuleMetadata($data);
                 $migrated = true;
             }
-        }
-
-        // Миграция .ocm_files.json в .ocm/files.json
-        $legacyFiles = $this->currentDir . '/.ocm_files.json';
-        $newFiles = $this->ocmDir . '/files.json';
-        if (file_exists($legacyFiles) && !file_exists($newFiles)) {
-            $this->ensureOcmDir();
-            copy($legacyFiles, $newFiles);
-            $migrated = true;
         }
 
         // Миграция .opencart в .ocm/target

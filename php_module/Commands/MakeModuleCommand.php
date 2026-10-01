@@ -5,6 +5,7 @@ namespace Ocm\Commands;
 use Ocm\Base\Command;
 use Ocm\Base\Input;
 use Ocm\Base\Output;
+use Ocm\Services\ConfigService;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -122,10 +123,8 @@ class MakeModuleCommand extends Command {
         $moduleUploadDir = $targetDir . '/upload';
         if (is_dir($moduleUploadDir)) {
             $files = $fileSystemService->findAllFiles($moduleUploadDir, $moduleUploadDir);
-            $ocmDir = $targetDir . '/.ocm';
-            if (!is_dir($ocmDir)) mkdir($ocmDir, 0777, true);
-            file_put_contents($ocmDir . '/files.json', json_encode(['files' => $files], JSON_PRETTY_PRINT));
-            file_put_contents($targetDir . '/.ocm_files.json', json_encode(['files' => $files], JSON_PRETTY_PRINT));
+            $moduleConfig = new ConfigService($targetDir);
+            $moduleConfig->saveFilesList($files);
         }
 
         $io->success([

@@ -29,5 +29,7 @@ class InitCommandTest extends CommandTestCase {
         $metadata = json_decode(file_get_contents($this->testDir . '/opencart-module.json'), true);
         $this->assertEquals('Test Module', $metadata['module_name']);
         $this->assertEquals('test_module', $metadata['code']);
+        $this->assertFileExists($this->testDir . '/.ocm/files.json');
+        $this->assertFileDoesNotExist($this->testDir . '/.ocm_files.json');
     }
 }

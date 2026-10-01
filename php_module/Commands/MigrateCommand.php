@@ -30,7 +30,7 @@ class MigrateCommand extends Command {
         if ($config->migrateOldFormat()) {
             $io->success([
                 "Выполнена успешная миграция данных в формат .ocm/:",
-                "- Список файлов перенесен в .ocm/files.json (с сохранением обратной совместимости)",
+                "- Список файлов перенесен в .ocm/files.json",
                 "- Метаданные очищены в opencart-module.json"
             ]);
         } else {
@@ -45,7 +45,7 @@ class MigrateCommand extends Command {
 
         if ($config->migrateOldFormat()) {
             $output->info("Выполнена миграция данных в новый формат:");
-            $output->writeln("- Список файлов перемещен в .ocm_files.json и .ocm/files.json");
+            $output->writeln("- Список файлов перемещен в .ocm/files.json");
             $output->writeln("- Метаданные модуля остались в opencart-module.json");
         } else {
             $output->comment("Миграция не требуется или файл opencart-module.json не содержит старых данных.");

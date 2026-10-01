@@ -12,6 +12,7 @@ $testClasses = [
     \Tests\Unit\Base\ApplicationTest::class,
     \Tests\Integration\Commands\BuildCommandTest::class,
     \Tests\Integration\Commands\InitCommandTest::class,
+    \Tests\Integration\Commands\MakeModuleCommandTest::class,
     \Tests\Integration\Commands\AgentCommandsTest::class,
 ];
 
